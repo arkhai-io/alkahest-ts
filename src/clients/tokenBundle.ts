@@ -5,6 +5,8 @@ import { abi as erc1155Abi } from "../contracts/IERC1155";
 import { abi as tokenBundleBarterUtilsAbi } from "../contracts/TokenBundleBarterUtils";
 import { abi as tokenBundleEscrowAbi } from "../contracts/TokenBundleEscrowObligation";
 import { abi as tokenBundlePaymentAbi } from "../contracts/TokenBundlePaymentObligation";
+import { abi as nativeTokenBarterUtilsAbi } from "../contracts/NativeTokenBarterUtils";
+import { abi as easAbi } from "../contracts/IEAS";
 import type { ApprovalPurpose, ChainAddresses, Demand, TokenBundle } from "../types";
 import { flattenTokenBundle, getAttestedEventFromTxHash, type ViemClient } from "../utils";
 
@@ -203,40 +205,48 @@ export const makeTokenBundleClient = (viemClient: ViemClient, addresses: ChainAd
       return { hash, attested };
     },
 
-    /**
-     * Creates an escrow for trading one bundle of tokens for another
-     * @param bid - Bundle of tokens offered
-     * @param ask - Bundle of tokens requested
-     * @param expiration - Escrow expiration time (0 for no expiration)
-     * @returns Transaction hash and attestation
-     *
-     * @example
-     * ```ts
-     * const escrow = await client.tokenBundle.buyBundleForBundle(
-     *   myTokenBundle,
-     *   theirTokenBundle,
-     *   0n,
-     * );
-     * ```
-     */
-    buyBundleForBundle: async (bid: TokenBundle, ask: TokenBundle, expiration: bigint) => {
-      const hash = await viemClient.writeContract({
-        address: addresses.tokenBundleBarterUtils,
-        abi: tokenBundleBarterUtilsAbi.abi,
-        functionName: "buyBundleForBundle",
-        args: [
-          {
-            ...flattenTokenBundle(bid),
-            arbiter: "0x0000000000000000000000000000000000000000",
-            demand: "0x",
-          },
-          { ...flattenTokenBundle(ask), payee: viemClient.account.address },
-          expiration,
-        ],
-      });
-      const attested = await getAttestedEventFromTxHash(viemClient, hash);
-      return { hash, attested };
-    },
+      /**
+       * Creates an escrow for trading one bundle of tokens for another
+       * @param bid - Bundle of tokens offered
+       * @param ask - Bundle of tokens requested
+       * @param expiration - Escrow expiration time (0 for no expiration)
+       * @returns Transaction hash and attestation
+       *
+       * @example
+       * ```ts
+       * const escrow = await client.tokenBundle.buyBundleForBundle(
+       *   myTokenBundle,
+       *   theirTokenBundle,
+       *   0n,
+       * );
+       * ```
+       */
+      buyBundleForBundle: async (bid: TokenBundle, ask: TokenBundle, expiration: bigint) => {
+        const hash = await viemClient.writeContract({
+          address: addresses.tokenBundleBarterUtils,
+          abi: tokenBundleBarterUtilsAbi.abi,
+          functionName: "buyBundleForBundle",
+          args: [
+            {
+              ...flattenTokenBundle(bid),
+              arbiter: addresses.tokenBundlePaymentObligation,
+              demand: encodePaymentObligationRaw({
+                ...flattenTokenBundle(ask),
+                payee: viemClient.account.address, // Alice receives the ask bundle
+              }),
+              nativeAmount: 0n,
+            },
+            { 
+              ...flattenTokenBundle(ask), 
+              payee: "0x0000000000000000000000000000000000000000", // Zero address - fulfilled by contract logic
+              nativeAmount: 0n 
+            },
+            expiration,
+          ],
+        });
+        const attested = await getAttestedEventFromTxHash(viemClient, hash);
+        return { hash, attested };
+      },
 
     /**
      * Fulfills a bundle-bundle trade

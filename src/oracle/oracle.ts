@@ -125,17 +125,24 @@ export const makeOracleClient = (viemClient: ViemClient, addresses: ChainAddress
   ): Promise<Decision[]> => {
     const attestations = await getArbitrationRequests(options);
 
-    const decisions = await Promise.all(
-      attestations.map(async (attestation) => {
-        const decision = await arbitrate(attestation);
-        if (decision === null) return null;
+    // Process arbitration sequentially to avoid nonce conflicts
+    const decisions: (Decision | null)[] = [];
+    for (const attestation of attestations) {
+      const decision = await arbitrate(attestation);
+      if (decision === null) {
+        decisions.push(null);
+        continue;
+      }
 
-        const hash = await arbitrateOnchain(attestation.uid, decision);
-        return { hash, attestation, decision };
-      }),
-    );
+      const hash = await arbitrateOnchain(attestation.uid, decision);
+      decisions.push({ hash, attestation, decision });
+    }
 
-    return decisions.filter((d) => d !== null) as Decision[];
+    // Wait for all transactions to be mined in parallel
+    const validDecisions = decisions.filter((d) => d !== null) as Decision[];
+    await Promise.all(validDecisions.map((d) => viemClient.waitForTransactionReceipt({ hash: d.hash })));
+
+    return validDecisions;
   };
 
   /**
