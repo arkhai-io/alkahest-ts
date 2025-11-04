@@ -207,10 +207,69 @@ export const makeOracleClient = (viemClient: ViemClient, addresses: ChainAddress
     return { decisions, unwatch };
   };
 
+  /**
+   * Wait for an arbitration decision to be made for a specific obligation
+   * Useful for claiming escrow after arbitration is complete
+   */
+  const waitForArbitration = async (
+    obligationUid: `0x${string}`,
+    oracle: Address,
+    pollingInterval?: number,
+  ): Promise<{
+    obligation: `0x${string}`;
+    oracle: Address;
+    decision: boolean;
+  }> => {
+    // First check if arbitration already exists
+    const existingLogs = await viemClient.getLogs({
+      address: addresses.trustedOracleArbiter,
+      event: arbitrationMadeEvent,
+      args: {
+        obligation: obligationUid,
+        oracle,
+      },
+      fromBlock: "earliest",
+      toBlock: "latest",
+    });
+
+    if (existingLogs.length > 0) {
+      return existingLogs[0].args as {
+        obligation: `0x${string}`;
+        oracle: Address;
+        decision: boolean;
+      };
+    }
+
+    // Use optimal polling interval based on transport type
+    const optimalInterval = getOptimalPollingInterval(viemClient, pollingInterval ?? 1000);
+
+    // Wait for new arbitration to be made
+    return new Promise((resolve) => {
+      const unwatch = viemClient.watchEvent({
+        address: addresses.trustedOracleArbiter,
+        event: arbitrationMadeEvent,
+        args: {
+          obligation: obligationUid,
+          oracle,
+        },
+        pollingInterval: optimalInterval,
+        onLogs: (logs) => {
+          resolve(logs[0].args as {
+            obligation: `0x${string}`;
+            oracle: Address;
+            decision: boolean;
+          });
+          unwatch();
+        },
+      });
+    });
+  };
+
   return {
     requestArbitration,
     getArbitrationRequests,
     arbitratePast,
     listenAndArbitrate,
+    waitForArbitration,
   };
 };

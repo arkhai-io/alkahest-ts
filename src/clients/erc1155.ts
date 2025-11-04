@@ -440,5 +440,72 @@ export const makeErc1155Client = (viemClient: ViemClient, addresses: ChainAddres
       const attested = await getAttestedEventFromTxHash(viemClient, hash);
       return { hash, attested };
     },
+
+    // ============ Native Token Functions ============
+
+    /**
+     * Buy ERC1155 tokens with native tokens (ETH)
+     * @param bidAmount - Amount of native tokens to pay
+     * @param ask - ERC1155 token details to purchase
+     * @param expiration - Expiration timestamp for the offer
+     * @returns Transaction hash and attestation UID
+     */
+    buyErc1155WithNative: async (
+      bidAmount: bigint,
+      ask: Erc1155,
+      expiration: bigint
+    ) => {
+      const hash = await viemClient.writeContract({
+        address: addresses.nativeTokenBarterUtils,
+        abi: nativeTokenBarterUtilsAbi.abi,
+        functionName: "buyErc1155WithEth",
+        args: [bidAmount, ask.address, ask.id, ask.value, expiration],
+        value: bidAmount,
+      });
+
+      const attested = await getAttestedEventFromTxHash(viemClient, hash);
+      return { hash, attested };
+    },
+
+    /**
+     * Pay native tokens to fulfill an ERC1155 escrow (someone escrowed ERC1155, you pay native tokens to claim it)
+     * @param buyAttestation - The ERC1155 escrow attestation UID to fulfill
+     * @returns Transaction hash and attestation UID
+     */
+    payNativeForErc1155: async (buyAttestation: `0x${string}`) => {
+      // Get the buy attestation to determine the amount needed
+      const buyAttestationData = await viemClient.readContract({
+        address: addresses.eas,
+        abi: easAbi.abi,
+        functionName: "getAttestation",
+        args: [buyAttestation],
+      });
+
+      // Decode the ERC1155 escrow data to get the native token payment demand
+      const escrowData = decodeAbiParameters(
+        [erc1155EscrowObligationDataType],
+        buyAttestationData.data
+      )[0];
+
+      // Decode the native token payment demand from the escrow
+      const demandData = decodeAbiParameters(
+        [{ type: "tuple", components: [
+          { type: "uint256", name: "amount" },
+          { type: "address", name: "payee" }
+        ]}],
+        escrowData.demand,
+      )[0];
+
+      const hash = await viemClient.writeContract({
+        address: addresses.nativeTokenBarterUtils,
+        abi: nativeTokenBarterUtilsAbi.abi,
+        functionName: "payEthForErc1155",
+        args: [buyAttestation],
+        value: demandData.amount,
+      });
+
+      const attested = await getAttestedEventFromTxHash(viemClient, hash);
+      return { hash, attested };
+    },
   };
 };

@@ -8,11 +8,19 @@ describe("Client Extension Tests", () => {
     const mockWalletClient = {
       extend: () => mockWalletClient,
       account: { address: "0xMockAddress" },
-      chain: { name: "MockChain" },
+      chain: { id: 31337, name: "MockChain" },
     } as unknown as WalletClient<Transport, Chain, Account>;
 
-    // Create minimal client
-    const client = makeMinimalClient(mockWalletClient);
+    // Mock contract addresses for unsupported chain
+    const mockAddresses = {
+      trustedOracleArbiter: "0x1234567890123456789012345678901234567890" as `0x${string}`,
+      anyArbiter: "0x1234567890123456789012345678901234567890" as `0x${string}`,
+      allArbiter: "0x1234567890123456789012345678901234567890" as `0x${string}`,
+      // Add other required addresses...
+    };
+
+    // Create minimal client with custom addresses
+    const client = makeMinimalClient(mockWalletClient, mockAddresses);
 
     const extensionA = (_baseClient: unknown) => ({
       methodA: () => "Extension A",

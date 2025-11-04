@@ -203,6 +203,11 @@ export const makeMinimalClient = (
 
     stringObligation: contractAddresses?.stringObligation || baseAddresses?.stringObligation || zeroAddress,
 
+    nativeTokenPaymentObligation:
+      contractAddresses?.nativeTokenPaymentObligation || baseAddresses?.nativeTokenPaymentObligation || zeroAddress,
+    nativeTokenEscrowObligation:
+      contractAddresses?.nativeTokenEscrowObligation || baseAddresses?.nativeTokenEscrowObligation || zeroAddress,
+
     trustedPartyArbiter: contractAddresses?.trustedPartyArbiter || baseAddresses?.trustedPartyArbiter || zeroAddress,
     trivialArbiter: contractAddresses?.trivialArbiter || baseAddresses?.trivialArbiter || zeroAddress,
     specificAttestationArbiter:
@@ -456,12 +461,9 @@ export const makeMinimalClient = (
   return makeExtendableClient(client);
 };
 
-// Deprecated - use specific clients above instead
+// Main arbiters client - provides both hierarchical and flat APIs
 export * from "./clients/arbiters";
-export * from "./clients/attestationPropertiesArbiters";
-// Main arbiter clients - use these for new development
-export * from "./clients/generalArbiters";
-export * from "./clients/logicalArbiters";
 export * from "./config";
 export * from "./extensions";
 export * from "./types";
+export * from "./utils";

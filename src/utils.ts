@@ -77,3 +77,6 @@ export const flattenTokenBundle = (bundle: TokenBundle): TokenBundleFlat => ({
   erc1155TokenIds: bundle.erc1155s.map((x) => x.id),
   erc1155Amounts: bundle.erc1155s.map((x) => x.value),
 });
+
+// Export demand parsing utilities
+export * from "./utils/demandParsing";

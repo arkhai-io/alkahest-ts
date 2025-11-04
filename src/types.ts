@@ -8,6 +8,10 @@ export type ChainAddresses = {
   erc20PaymentObligation: `0x${string}`;
   erc20BarterUtils: `0x${string}`;
 
+  nativeTokenPaymentObligation: `0x${string}`;
+  nativeTokenEscrowObligation: `0x${string}`;
+  nativeTokenBarterUtils: `0x${string}`;
+
   erc721EscrowObligation: `0x${string}`;
   erc721PaymentObligation: `0x${string}`;
   erc721BarterUtils: `0x${string}`;
@@ -213,3 +217,155 @@ export interface EnhancedArbitrateFilters
   /** Skip obligations that have already been arbitrated */
   skipAlreadyArbitrated?: boolean;
 }
+
+// =====================================
+// Native Token Arbitration Types
+// =====================================
+
+/**
+ * Basic native token transfer arbitration request
+ * Oracles can verify if a native token transfer occurred with specific criteria
+ */
+export interface NativeTokenTransferArbitrationRequest {
+  type: 'native_token_transfer';
+  /** Minimum native token amount that must be transferred (in wei) */
+  minAmount: bigint;
+  /** Address that should receive the native token */
+  recipient: `0x${string}`;
+  /** Address that should send the native token (optional) */
+  sender?: `0x${string}`;
+  /** Block number after which the transfer should occur (optional) */
+  afterBlock?: bigint;
+  /** Block number before which the transfer should occur (optional) */
+  beforeBlock?: bigint;
+  /** Specific transaction hash to verify (optional) */
+  txHash?: `0x${string}`;
+}
+
+/**
+ * Native token balance arbitration request
+ * Oracles can verify if an address has a minimum native token balance
+ */
+export interface NativeTokenBalanceArbitrationRequest {
+  type: 'native_token_balance';
+  /** Address to check balance for */
+  address: `0x${string}`;
+  /** Minimum balance required (in wei) */
+  minBalance: bigint;
+  /** Block number at which to check balance (optional, defaults to latest) */
+  atBlock?: bigint;
+}
+
+/**
+ * Native token payment arbitration request
+ * Oracles can verify if a payment was made from payer to payee
+ */
+export interface NativeTokenPaymentArbitrationRequest {
+  type: 'native_token_payment';
+  /** Amount to be paid (in wei) */
+  amount: bigint;
+  /** Address that should make the payment */
+  payer: `0x${string}`;
+  /** Address that should receive the payment */
+  payee: `0x${string}`;
+  /** Time window for the payment (optional) */
+  timeWindow?: {
+    afterBlock?: bigint;
+    beforeBlock?: bigint;
+  };
+  /** Specific transaction hash to verify (optional) */
+  txHash?: `0x${string}`;
+}
+
+/**
+ * Native token escrow arbitration request
+ * Oracles can verify escrow conditions are met
+ */
+export interface NativeTokenEscrowArbitrationRequest {
+  type: 'native_token_escrow';
+  /** Total amount in escrow (in wei) */
+  totalAmount: bigint;
+  /** Parties involved in the escrow */
+  parties: Array<{
+    address: `0x${string}`;
+    amount: bigint;
+    role: 'depositor' | 'beneficiary' | 'arbiter';
+  }>;
+  /** Escrow conditions */
+  conditions: {
+    /** Whether all deposits are required */
+    requireAllDeposits: boolean;
+    /** Minimum number of depositors */
+    minDepositors: number;
+    /** Release conditions */
+    releaseConditions?: string[];
+  };
+  /** Time window for escrow (optional) */
+  timeWindow?: {
+    afterBlock?: bigint;
+    beforeBlock?: bigint;
+  };
+}
+
+/**
+ * Union type for all native token arbitration request types
+ */
+export type NativeTokenArbitrationRequest = 
+  | NativeTokenTransferArbitrationRequest
+  | NativeTokenBalanceArbitrationRequest
+  | NativeTokenPaymentArbitrationRequest
+  | NativeTokenEscrowArbitrationRequest;
+
+/**
+ * Result of native token arbitration processing
+ */
+export interface NativeTokenArbitrationResult {
+  /** The original request that was processed */
+  request: NativeTokenArbitrationRequest;
+  /** Whether the arbitration conditions are satisfied */
+  decision: boolean;
+  /** Oracle that made the decision */
+  oracle: `0x${string}`;
+  /** Block number when decision was made */
+  blockNumber: bigint;
+  /** Timestamp when decision was made */
+  timestamp: bigint;
+  /** Additional evidence or reasoning */
+  evidence?: {
+    /** Transaction hashes related to the decision */
+    transactionHashes?: `0x${string}`[];
+    /** Balances checked during arbitration */
+    balances?: Record<`0x${string}`, bigint>;
+    /** Block numbers relevant to the decision */
+    relevantBlocks?: bigint[];
+    /** Human-readable reasoning */
+    reasoning?: string;
+    /** Any additional metadata */
+    metadata?: Record<string, any>;
+  };
+}
+
+/**
+ * Context for tracking native token arbitration requests
+ */
+export interface NativeTokenArbitrationContext {
+  /** The arbitration request */
+  request: NativeTokenArbitrationRequest;
+  /** Address that submitted the request */
+  requester: `0x${string}`;
+  /** Timestamp when request was created */
+  createdAt: bigint;
+  /** Oracle assigned to handle the request (optional) */
+  assignedOracle?: `0x${string}`;
+  /** Status of the request */
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
+  /** Unique identifier for the request */
+  requestId: `0x${string}`;
+}
+
+// Type aliases for backward compatibility with ETH naming
+export type EthTransferArbitrationRequest = NativeTokenTransferArbitrationRequest;
+export type EthBalanceArbitrationRequest = NativeTokenBalanceArbitrationRequest;
+export type EthArbitrationRequest = NativeTokenArbitrationRequest;
+export type EthArbitrationResult = NativeTokenArbitrationResult;
+export type EthArbitrationContext = NativeTokenArbitrationContext;

@@ -13,6 +13,9 @@ export const contractAddresses: Record<string, ChainAddresses> = {
     erc20BarterUtils: "0x5C624f8FbbB377378cDfE8B627384A917FE839db",
     erc20EscrowObligation: "0xFa76421cEe6aee41adc7f6a475b9Ef3776d500F0",
     erc20PaymentObligation: "0xE95d3931E15E4d96cE1d2Dd336DcEad35A708bdB",
+    nativeTokenPaymentObligation: "0x", // To be deployed
+    nativeTokenEscrowObligation: "0x", // To be deployed
+    nativeTokenBarterUtils: "0x", // To be deployed
     erc721BarterUtils: "0x01414CC4a4c7b7fa9F551907ee89c867c7a74d29",
     erc721EscrowObligation: "0xF3C3dC387e00FE76CCF7549634aa694D466de5AA",
     erc721PaymentObligation: "0x9DFe20Ded52D0F9e535F546f87d83B473DefC5B2",
@@ -39,6 +42,9 @@ export const contractAddresses: Record<string, ChainAddresses> = {
     stringObligation: "0xbb022fc36d0cc97b6cae5a2e15d45b7a9ad46f99",
     erc20EscrowObligation: "0x235792a6d077a04fb190a19f362acecab7866ab5",
     erc20PaymentObligation: "0xd8b6199aa91992f5d3bafddc3372b391e46c92ce",
+    nativeTokenPaymentObligation: "0x", // To be deployed
+    nativeTokenEscrowObligation: "0x", // To be deployed
+    nativeTokenBarterUtils: "0x", // To be deployed
     erc721EscrowObligation: "0x336f2f91b093001edd90e49216422b33b8b4e03b",
     erc721PaymentObligation: "0x4b9b6ff4a7c2bc89eee6f28355b9a94e6649bbf8",
     erc1155EscrowObligation: "0x96c14b182cd99a09ddddc6b755ba0c4ed3d6991c",

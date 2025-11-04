@@ -452,5 +452,72 @@ export const makeErc721Client = (viemClient: ViemClient, addresses: ChainAddress
       const attested = await getAttestedEventFromTxHash(viemClient, hash);
       return { hash, attested };
     },
+
+    // ============ Native Token Functions ============
+
+    /**
+     * Buy ERC721 NFT with native tokens (ETH)
+     * @param bidAmount - Amount of native tokens to pay
+     * @param ask - ERC721 token details to purchase
+     * @param expiration - Expiration timestamp for the offer
+     * @returns Transaction hash and attestation UID
+     */
+    buyErc721WithNative: async (
+      bidAmount: bigint,
+      ask: Erc721,
+      expiration: bigint
+    ) => {
+      const hash = await viemClient.writeContract({
+        address: addresses.nativeTokenBarterUtils,
+        abi: nativeTokenBarterUtilsAbi.abi,
+        functionName: "buyErc721WithEth",
+        args: [bidAmount, ask.address, ask.id, expiration],
+        value: bidAmount,
+      });
+
+      const attested = await getAttestedEventFromTxHash(viemClient, hash);
+      return { hash, attested };
+    },
+
+    /**
+     * Pay native tokens to fulfill an ERC721 escrow (someone escrowed ERC721, you pay native tokens to claim it)
+     * @param buyAttestation - The ERC721 escrow attestation UID to fulfill
+     * @returns Transaction hash and attestation UID
+     */
+    payNativeForErc721: async (buyAttestation: `0x${string}`) => {
+      // Get the buy attestation to determine the amount needed
+      const buyAttestationData = await viemClient.readContract({
+        address: addresses.eas,
+        abi: easAbi.abi,
+        functionName: "getAttestation",
+        args: [buyAttestation],
+      });
+
+      // Decode the ERC721 escrow data to get the native token payment demand
+      const escrowData = decodeAbiParameters(
+        [erc721EscrowObligationDataType],
+        buyAttestationData.data
+      )[0];
+
+      // Decode the native token payment demand from the escrow
+      const demandData = decodeAbiParameters(
+        [{ type: "tuple", components: [
+          { type: "uint256", name: "amount" },
+          { type: "address", name: "payee" }
+        ]}],
+        escrowData.demand,
+      )[0];
+
+      const hash = await viemClient.writeContract({
+        address: addresses.nativeTokenBarterUtils,
+        abi: nativeTokenBarterUtilsAbi.abi,
+        functionName: "payEthForErc721",
+        args: [buyAttestation],
+        value: demandData.amount,
+      });
+
+      const attested = await getAttestedEventFromTxHash(viemClient, hash);
+      return { hash, attested };
+    },
   };
 };

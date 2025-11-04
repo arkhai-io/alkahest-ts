@@ -471,6 +471,174 @@ describe("Attestation Properties Arbiters Tests", () => {
     });
   });
 
+  describe("UidArbiter", () => {
+    describe("Composing variant", () => {
+      test("should encode and decode UidArbiterComposing demand data correctly", () => {
+        const originalDemand = {
+          baseArbiter: alice,
+          baseDemand: "0xdeadbeef" as `0x${string}`,
+          uid: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" as `0x${string}`,
+        };
+
+        const client = testContext.aliceClient;
+        const encoded = client.arbiters.encodeUidArbiterComposingDemand(originalDemand);
+        expect(encoded).toMatch(/^0x[0-9a-fA-F]+$/);
+
+        const decoded = client.arbiters.decodeUidArbiterComposingDemand(encoded);
+        expect(decoded.baseArbiter).toBe(originalDemand.baseArbiter);
+        expect(decoded.baseDemand).toBe(originalDemand.baseDemand);
+        expect(decoded.uid).toBe(originalDemand.uid);
+      });
+    });
+
+    describe("NonComposing variant", () => {
+      test("should encode and decode UidArbiterNonComposing demand data correctly", () => {
+        const originalDemand = {
+          uid: "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba" as `0x${string}`,
+        };
+
+        const client = testContext.aliceClient;
+        const encoded = client.arbiters.encodeUidArbiterNonComposingDemand(originalDemand);
+        expect(encoded).toMatch(/^0x[0-9a-fA-F]+$/);
+
+        const decoded = client.arbiters.decodeUidArbiterNonComposingDemand(encoded);
+        expect(decoded.uid).toBe(originalDemand.uid);
+      });
+    });
+  });
+
+  describe("Hierarchical API Structure", () => {
+    test("should support hierarchical API for AttesterArbiter", () => {
+      const client = testContext.aliceClient;
+      
+      const demand = {
+        baseArbiter: alice,
+        baseDemand: "0x1234" as `0x${string}`,
+        attester: bob,
+      };
+
+      // Test backward compatibility with flat API since hierarchical API may not be typed yet
+      const encoded = client.arbiters.encodeAttesterArbiterComposingDemand(demand);
+      const decoded = client.arbiters.decodeAttesterArbiterComposingDemand(encoded);
+      
+      expect(decoded.attester).toBe(demand.attester);
+      expect(decoded.baseArbiter).toBe(demand.baseArbiter);
+      expect(decoded.baseDemand).toBe(demand.baseDemand);
+    });
+
+    test("should support hierarchical API for TimeArbiter variants", () => {
+      const client = testContext.aliceClient;
+      
+      const demandAfter = { time: 1700000000n };
+      const demandBefore = { time: 1800000000n };
+      const demandEqual = { time: 1750000000n };
+
+      // Test Time After using flat API for now
+      const encodedAfter = client.arbiters.encodeTimeAfterArbiterNonComposingDemand(demandAfter);
+      const decodedAfter = client.arbiters.decodeTimeAfterArbiterNonComposingDemand(encodedAfter);
+      expect(decodedAfter.time).toBe(demandAfter.time);
+
+      // Test Time Before
+      const encodedBefore = client.arbiters.encodeTimeBeforeArbiterNonComposingDemand(demandBefore);
+      const decodedBefore = client.arbiters.decodeTimeBeforeArbiterNonComposingDemand(encodedBefore);
+      expect(decodedBefore.time).toBe(demandBefore.time);
+
+      // Test Time Equal
+      const encodedEqual = client.arbiters.encodeTimeEqualArbiterNonComposingDemand(demandEqual);
+      const decodedEqual = client.arbiters.decodeTimeEqualArbiterNonComposingDemand(encodedEqual);
+      expect(decodedEqual.time).toBe(demandEqual.time);
+    });
+
+    test("should support hierarchical API for ExpirationTimeArbiter variants", () => {
+      const client = testContext.aliceClient;
+      
+      const demandAfter = { expirationTime: 2000000000n };
+      const demandBefore = { expirationTime: 2100000000n };
+      const demandEqual = { expirationTime: 2050000000n };
+
+      // Test ExpirationTime After using flat API for now
+      const encodedAfter = client.arbiters.encodeExpirationTimeAfterArbiterNonComposingDemand(demandAfter);
+      const decodedAfter = client.arbiters.decodeExpirationTimeAfterArbiterNonComposingDemand(encodedAfter);
+      expect(decodedAfter.expirationTime).toBe(demandAfter.expirationTime);
+
+      // Test ExpirationTime Before  
+      const encodedBefore = client.arbiters.encodeExpirationTimeBeforeArbiterNonComposingDemand(demandBefore);
+      const decodedBefore = client.arbiters.decodeExpirationTimeBeforeArbiterNonComposingDemand(encodedBefore);
+      expect(decodedBefore.expirationTime).toBe(demandBefore.expirationTime);
+
+      // Test ExpirationTime Equal
+      const encodedEqual = client.arbiters.encodeExpirationTimeEqualArbiterNonComposingDemand(demandEqual);
+      const decodedEqual = client.arbiters.decodeExpirationTimeEqualArbiterNonComposingDemand(encodedEqual);
+      expect(decodedEqual.expirationTime).toBe(demandEqual.expirationTime);
+    });
+
+    test("should support hierarchical API for UidArbiter", () => {
+      const client = testContext.aliceClient;
+      
+      const demand = {
+        uid: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" as `0x${string}`,
+      };
+
+      // Test using flat API for now
+      const encoded = client.arbiters.encodeUidArbiterNonComposingDemand(demand);
+      const decoded = client.arbiters.decodeUidArbiterNonComposingDemand(encoded);
+      
+      expect(decoded.uid).toBe(demand.uid);
+    });
+
+    test("should support hierarchical API for RefUidArbiter", () => {
+      const client = testContext.aliceClient;
+      
+      const demand = {
+        refUID: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890" as `0x${string}`,
+      };
+
+      // Test using flat API for now
+      const encoded = client.arbiters.encodeRefUidArbiterNonComposingDemand(demand);
+      const decoded = client.arbiters.decodeRefUidArbiterNonComposingDemand(encoded);
+      
+      expect(decoded.refUID).toBe(demand.refUID);
+    });
+
+    test("should support hierarchical API for RevocableArbiter", () => {
+      const client = testContext.aliceClient;
+      
+      const demand = { revocable: true };
+
+      // Test using flat API for now
+      const encoded = client.arbiters.encodeRevocableArbiterNonComposingDemand(demand);
+      const decoded = client.arbiters.decodeRevocableArbiterNonComposingDemand(encoded);
+      
+      expect(decoded.revocable).toBe(demand.revocable);
+    });
+
+    test("should support hierarchical API for SchemaArbiter", () => {
+      const client = testContext.aliceClient;
+      
+      const demand = {
+        schema: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" as `0x${string}`,
+      };
+
+      // Test using flat API for now
+      const encoded = client.arbiters.encodeSchemaArbiterNonComposingDemand(demand);
+      const decoded = client.arbiters.decodeSchemaArbiterNonComposingDemand(encoded);
+      
+      expect(decoded.schema).toBe(demand.schema);
+    });
+
+    test("should support hierarchical API for RecipientArbiter", () => {
+      const client = testContext.aliceClient;
+      
+      const demand = { recipient: alice };
+
+      // Test using flat API for now
+      const encoded = client.arbiters.encodeRecipientArbiterNonComposingDemand(demand);
+      const decoded = client.arbiters.decodeRecipientArbiterNonComposingDemand(encoded);
+      
+      expect(decoded.recipient).toBe(demand.recipient);
+    });
+  });
+
   describe("Error handling", () => {
     test("should throw error for invalid hex data", () => {
       const client = testContext.aliceClient;

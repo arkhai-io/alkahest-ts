@@ -30,6 +30,8 @@ beforeEach(async () => {
     await testContext.testClient.loadState({
       state: testContext.anvilInitState,
     });
+    // Force a block mine to ensure state is properly reset
+    await testContext.testClient.mine({ blocks: 1 });
   }
 });
 
@@ -72,6 +74,9 @@ test("synchronous offchain oracle capitalization flow", async () => {
 
   // Request arbitration
   await testContext.bobClient.oracle.requestArbitration(fulfillment.uid, testContext.charlie);
+
+  // Give a moment for the arbitration request to be processed
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   const { decisions, unwatch } = await testContext.charlieClient.oracle.listenAndArbitrate(
     async (attestation) => {
