@@ -298,6 +298,33 @@ describe("ERC721 Tests", () => {
       expect(compareAddresses(newOwner, testContext.addresses.erc721EscrowObligation)).toBe(true);
     });
 
+    test("testReclaimExpired", async () => {
+      const currentTime = Math.floor(Date.now() / 1000);
+      const shortExpiration = BigInt(currentTime + 60); // 60 seconds from now
+
+      // Alice approves and creates an escrow
+      await aliceClient.erc721.approve({ address: aliceErc721Token, id: aliceTokenId }, "escrow");
+
+      const { attested: buyAttestation } = await aliceClient.erc721.buyErc721ForErc721(
+        { address: aliceErc721Token, id: aliceTokenId },
+        { address: bobErc721Token, id: bobTokenId },
+        shortExpiration,
+      );
+
+      // Advance blockchain time to after expiration
+      await testClient.increaseTime({ seconds: 120 }); // Advance 120 seconds
+
+      // Alice collects her expired escrow
+      await aliceClient.erc721.reclaimExpired(buyAttestation.uid);
+
+      // Verify Alice got her token back
+      const tokenOwner = await testClient.getErc721Owner({
+        address: aliceErc721Token,
+        id: aliceTokenId,
+      });
+
+      expect(compareAddresses(tokenOwner, alice)).toBe(true);
+    });
     test("testPayErc721ForBundle", async () => {
       const expiration = BigInt(Math.floor(Date.now() / 1000) + 86400); // 1 day from now
       const erc20Amount = parseEther("5");
@@ -376,34 +403,6 @@ describe("ERC721 Tests", () => {
       expect(compareAddresses(aliceOwnsToken, alice)).toBe(true);
       expect(aliceFinalBalanceErc20 - aliceInitialBalanceErc20).toBe(erc20Amount / 2n);
       expect(aliceFinalBalanceErc1155 - aliceInitialBalanceErc1155).toBe(erc1155Amount / 2n);
-    });
-
-    test("testReclaimExpired", async () => {
-      const currentTime = Math.floor(Date.now() / 1000);
-      const shortExpiration = BigInt(currentTime + 60); // 60 seconds from now
-
-      // Alice approves and creates an escrow
-      await aliceClient.erc721.approve({ address: aliceErc721Token, id: aliceTokenId }, "escrow");
-
-      const { attested: buyAttestation } = await aliceClient.erc721.buyErc721ForErc721(
-        { address: aliceErc721Token, id: aliceTokenId },
-        { address: bobErc721Token, id: bobTokenId },
-        shortExpiration,
-      );
-
-      // Advance blockchain time to after expiration
-      await testClient.increaseTime({ seconds: 120 }); // Advance 120 seconds
-
-      // Alice collects her expired escrow
-      await aliceClient.erc721.reclaimExpired(buyAttestation.uid);
-
-      // Verify Alice got her token back
-      const tokenOwner = await testClient.getErc721Owner({
-        address: aliceErc721Token,
-        id: aliceTokenId,
-      });
-
-      expect(compareAddresses(tokenOwner, alice)).toBe(true);
     });
   });
 });
