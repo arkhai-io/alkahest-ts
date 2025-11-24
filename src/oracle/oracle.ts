@@ -240,7 +240,7 @@ export const makeOracleClient = (viemClient: ViemClient, addresses: ChainAddress
     });
 
     if (existingLogs.length > 0) {
-      return existingLogs[0].args as {
+      return existingLogs[0]!.args as {
         obligation: `0x${string}`;
         oracle: Address;
         decision: boolean;
@@ -261,12 +261,14 @@ export const makeOracleClient = (viemClient: ViemClient, addresses: ChainAddress
         },
         pollingInterval: optimalInterval,
         onLogs: (logs) => {
-          resolve(logs[0].args as {
-            obligation: `0x${string}`;
-            oracle: Address;
-            decision: boolean;
-          });
-          unwatch();
+          if (logs.length > 0 && logs[0]) {
+            resolve(logs[0].args as {
+              obligation: `0x${string}`;
+              oracle: Address;
+              decision: boolean;
+            });
+            unwatch();
+          }
         },
       });
     });
