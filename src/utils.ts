@@ -115,3 +115,10 @@ export const readContract = async <T>(
     authorizationList: undefined,
   }) as Promise<T>;
 };
+
+// Re-export demand parsing utilities
+export { ArbiterRegistry, type ArbiterDemandParser, type ParsedDemand, DemandParsingUtils } from "./utils/demandParsing";
+
+// Re-export improved arbiter registry utilities
+export { createFullArbiterRegistry, DemandParsingRegistry } from "./utils/arbiterRegistry";
+export { createComposingArbiterCodec, createNonComposingArbiterCodec } from "./utils/codecFactory";

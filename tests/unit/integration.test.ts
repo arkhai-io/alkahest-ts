@@ -7,8 +7,8 @@ import {
 import {
   ArbiterRegistry,
   DemandParsingUtils,
-  createDefaultArbiterRegistry,
 } from "../../src/utils/demandParsing";
+import { createFullArbiterRegistry } from "../../src/utils/arbiterRegistry";
 import type { Demand, ChainAddresses } from "../../src/types";
 
 describe("Integration Tests for New Features", () => {
@@ -61,11 +61,11 @@ describe("Integration Tests for New Features", () => {
     // Demand parsing utilities should be available
     expect(ArbiterRegistry).toBeDefined();
     expect(DemandParsingUtils).toBeDefined();
-    expect(createDefaultArbiterRegistry).toBeDefined();
+    expect(createFullArbiterRegistry).toBeDefined();
   });
 
   test("should create and parse complex demand using static codecs", () => {
-    const registry = createDefaultArbiterRegistry(mockAddresses);
+    const registry = createFullArbiterRegistry(mockAddresses);
 
     // Create a complex nested demand using static codecs
     const trustedOracleDemand = TrustedOracleArbiterCodec.encode({
@@ -129,7 +129,7 @@ describe("Integration Tests for New Features", () => {
   });
 
   test("should demonstrate end-to-end workflow with static codecs and parsing", () => {
-    const registry = createDefaultArbiterRegistry(mockAddresses);
+    const registry = createFullArbiterRegistry(mockAddresses);
 
     // 1. Create demands using static codecs
     const oracleDemand = TrustedOracleArbiterCodec.encode({
