@@ -315,7 +315,13 @@ describe("ERC721 Tests", () => {
       await testClient.increaseTime({ seconds: 120 }); // Advance 120 seconds
 
       // Alice collects her expired escrow
-      await aliceClient.erc721.reclaimExpired(buyAttestation.uid);
+      const reclaimTxHash = await aliceClient.erc721.reclaimExpired(buyAttestation.uid);
+      
+      // increase block timestamp to index tx
+      // await testClient.increaseTime({ seconds: 25 });
+      // Wait for transaction to be mined before checking ownership
+      await testClient.waitForTransactionReceipt({ hash: reclaimTxHash });
+      
 
       // Verify Alice got her token back
       const tokenOwner = await testClient.getErc721Owner({
