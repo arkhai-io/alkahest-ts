@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { createDefaultArbiterRegistry, DemandParsingUtils, AnyArbiterCodec, AllArbiterCodec, TrustedOracleArbiterCodec } from "../../src";
+import { createFullArbiterRegistry, DemandParsingUtils, AnyArbiterCodec, AllArbiterCodec, TrustedOracleArbiterCodec } from "../../src";
 import type { ChainAddresses, Demand } from "../../src/types";
 
 describe("Demand Parsing and Static Codecs", () => {
